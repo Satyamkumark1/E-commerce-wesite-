@@ -2,101 +2,91 @@ let shop = document.getElementById("shop");
 
 /**
  * ! Basket to hold all the selected items
- * ? the getItem part is retrieving data from the local storage
- * ? if local storage is blank, basket becomes an empty array
+ * ? Retrieves data from localStorage, or initializes as empty array
  */
 
 let basket = JSON.parse(localStorage.getItem("data")) || [];
 
 /**
- * ! Generates the shop with product cards composed of
- * ! images, title, price, buttons, description
+ * ! Generates the shop with product cards
+ * ! Each card includes image, title, price, description, and quantity controls
  */
 
 let generateShop = () => {
-  return (shop.innerHTML = shopItemsData
+  if (!shopItemsData || shopItemsData.length === 0) {
+    shop.innerHTML = '<div class="text-center"><h2>No products available at the moment. Please check back later!</h2></div>';
+    return;
+  }
+  shop.innerHTML = shopItemsData
     .map((x) => {
       let { id, name, desc, img, price } = x;
       let search = basket.find((y) => y.id === id) || [];
       return `
-    <div id=product-id-${id} class="item">
-      <img width="220" src=${img} alt="">
+    <div id=product-id-${id} class="item" tabindex="0" aria-label="${name}, $${price}">
+      <img width="220" src=${img} alt="${name}">
       <div class="details">
         <h3>${name}</h3>
         <p>${desc}</p>
         <div class="price-quantity">
           <h2>$ ${price} </h2>
           <div class="buttons">
-            <i onclick="decrement(${id})" class="bi bi-dash-lg"></i>
-            <div id=${id} class="quantity">${
-        search.item === undefined ? 0 : search.item
-      }</div>
-            <i onclick="increment(${id})" class="bi bi-plus-lg"></i>
+            <i onclick="decrement('${id}')" class="bi bi-dash-lg" aria-label="Decrease quantity"></i>
+            <div id='${id}' class="quantity">${search.item === undefined ? 0 : search.item}</div>
+            <i onclick="increment('${id}')" class="bi bi-plus-lg" aria-label="Increase quantity"></i>
           </div>
         </div>
       </div>
-  </div>
+    </div>
     `;
     })
-    .join(""));
+    .join("");
 };
 
 generateShop();
 
 /**
- * ! used to increase the selected product item quantity by 1
+ * ! Increases the selected product's quantity by 1
  */
 
 let increment = (id) => {
-  let selectedItem = id;
-  let search = basket.find((x) => x.id === selectedItem.id);
-
+  let search = basket.find((x) => x.id === id);
   if (search === undefined) {
-    basket.push({
-      id: selectedItem.id,
-      item: 1,
-    });
+    basket.push({ id: id, item: 1 });
   } else {
     search.item += 1;
   }
-
-  console.log(basket);
-  update(selectedItem.id);
+  update(id);
   localStorage.setItem("data", JSON.stringify(basket));
 };
 
 /**
- * ! used to decrease the selected product item quantity by 1
+ * ! Decreases the selected product's quantity by 1
  */
 
 let decrement = (id) => {
-  let selectedItem = id;
-  let search = basket.find((x) => x.id === selectedItem.id);
-
+  let search = basket.find((x) => x.id === id);
   if (search === undefined) return;
   else if (search.item === 0) return;
   else {
     search.item -= 1;
   }
-
-  update(selectedItem.id);
+  update(id);
   basket = basket.filter((x) => x.item !== 0);
-  console.log(basket);
   localStorage.setItem("data", JSON.stringify(basket));
 };
 
 /**
- * ! To update the digits of picked items on each item card
+ * ! Updates the quantity display for a product card
  */
 
 let update = (id) => {
   let search = basket.find((x) => x.id === id);
-  document.getElementById(id).innerHTML = search.item;
+  document.getElementById(id).innerHTML = search && search.item ? search.item : 0;
   calculation();
 };
 
 /**
- * ! To calculate total amount of selected Items
+ * ! Calculates and updates the total number of items in the cart icon
  */
 
 let calculation = () => {
